@@ -2,20 +2,23 @@
 
 import { ID, Query } from "node-appwrite";
 import { createAdminClient } from "../appwrite";
+import {
+  getAppwriteDatabaseId,
+  getAppwriteTransactionCollectionId,
+} from "../config";
 import { parseStringify } from "../utils";
 
-const {
-  APPWRITE_DATABASE_ID: DATABASE_ID,
-  APPWRITE_TRANSACTION_COLLECTION_ID: TRANSACTION_COLLECTION_ID,
-} = process.env;
+const getDatabaseId = () => getAppwriteDatabaseId();
+
+const getTransactionCollectionId = () => getAppwriteTransactionCollectionId();
 
 export const createTransaction = async (transaction: CreateTransactionProps) => {
   try {
     const { database } = await createAdminClient();
 
     const newTransaction = await database.createDocument(
-      DATABASE_ID!,
-      TRANSACTION_COLLECTION_ID!,
+      getDatabaseId(),
+      getTransactionCollectionId(),
       ID.unique(),
       {
         channel: 'online',
@@ -35,23 +38,30 @@ export const getTransactionsByBankId = async ({bankId}: getTransactionsByBankIdP
     const { database } = await createAdminClient();
 
     const senderTransactions = await database.listDocuments(
-      DATABASE_ID!,
-      TRANSACTION_COLLECTION_ID!,
+      getDatabaseId(),
+      getTransactionCollectionId(),
       [Query.equal('senderBankId', bankId)],
     )
 
     const receiverTransactions = await database.listDocuments(
-      DATABASE_ID!,
-      TRANSACTION_COLLECTION_ID!,
+      getDatabaseId(),
+      getTransactionCollectionId(),
       [Query.equal('receiverBankId', bankId)],
     );
 
+    // A transfer to yourself is returned by both queries, so the documents are
+    // deduplicated to avoid showing the same transaction twice.
+    const documents = Array.from(
+      new Map(
+        [...senderTransactions.documents, ...receiverTransactions.documents].map(
+          (document) => [document.$id, document]
+        )
+      ).values()
+    );
+
     const transactions = {
-      total: senderTransactions.total + receiverTransactions.total,
-      documents: [
-        ...senderTransactions.documents, 
-        ...receiverTransactions.documents,
-      ]
+      total: documents.length,
+      documents,
     }
 
     return parseStringify(transactions);

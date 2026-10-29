@@ -22,12 +22,14 @@ const TransactionHistory = async ({ searchParams: { id, page }}:SearchParamProps
 
 
 const rowsPerPage = 10;
-const totalPages = Math.ceil(account?.transactions.length / rowsPerPage);
+// There is no account (yet) when no bank account is linked.
+const transactions = account?.transactions ?? [];
+const totalPages = Math.ceil(transactions.length / rowsPerPage);
 
 const indexOfLastTransaction = currentPage * rowsPerPage;
 const indexOfFirstTransaction = indexOfLastTransaction - rowsPerPage;
 
-const currentTransactions = account?.transactions.slice(
+const currentTransactions = transactions.slice(
   indexOfFirstTransaction, indexOfLastTransaction
 )
   return (

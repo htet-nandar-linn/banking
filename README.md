@@ -111,25 +111,30 @@ Create a new file named `.env.local` in the root of your project and add the fol
 
 ```env
 #NEXT
-NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 #APPWRITE
+# `local` uses the built-in file backed database (no Appwrite account needed),
+# `cloud` uses Appwrite Cloud.
+APPWRITE_BACKEND=local
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_PROJECT=
 APPWRITE_DATABASE_ID=
 APPWRITE_USER_COLLECTION_ID=
 APPWRITE_BANK_COLLECTION_ID=
 APPWRITE_TRANSACTION_COLLECTION_ID=
-APPWRITE_SECRET=
+NEXT_APPWRITE_KEY=
 
 #PLAID
+# Leave empty to use the built-in demo bank account.
 PLAID_CLIENT_ID=
 PLAID_SECRET=
-PLAID_ENV=
-PLAID_PRODUCTS=
-PLAID_COUNTRY_CODES=
+PLAID_ENV=sandbox
+PLAID_PRODUCTS=auth,transactions,identity
+PLAID_COUNTRY_CODES=US,CA
 
 #DWOLLA
+# Leave empty to emulate the transfers locally.
 DWOLLA_KEY=
 DWOLLA_SECRET=
 DWOLLA_BASE_URL=https://api-sandbox.dwolla.com
@@ -137,9 +142,63 @@ DWOLLA_ENV=sandbox
 
 ```
 
-Replace the placeholder values with your actual respective account credentials. In particular, `DWOLLA_KEY` and `DWOLLA_SECRET` must be set to your Dwolla API credentials before using Dwolla features; blank values are not valid. You can obtain these credentials by signing up on the [Appwrite](https://appwrite.io/?utm_source=youtube&utm_content=reactnative&ref=JSmastery), [Plaid](https://plaid.com/) and [Dwolla](https://www.dwolla.com/)
+**Run it without any third party account (local mode)**
 
-If `DWOLLA_ENV` is unset or blank, the app defaults to `sandbox`. Set it to `production` when using Dwolla production credentials.
+With `APPWRITE_BACKEND=local` the app stores its users, bank accounts and transactions in a small
+file backed database (`.data/local-appwrite.json`) instead of Appwrite. Sign up, sign in and the
+dashboard work right away, no Appwrite project and no API key needed.
+
+Plaid and Dwolla are emulated when their credentials are missing, so **linking a bank account and
+transferring funds work as well**:
+
+- Without Plaid credentials the **Connect demo bank** button links a built-in demo account
+  (*Horizon Demo Bank*) with a balance, a list of transactions and a shareable id.
+- Without Dwolla credentials the transfers are emulated as well, so the transfer form creates a
+  transaction instead of failing.
+
+The demo data is clearly marked as such (*Horizon Demo Bank*), it is never presented as a real
+account. As soon as `PLAID_CLIENT_ID` / `PLAID_SECRET` (and `DWOLLA_KEY` / `DWOLLA_SECRET`) are
+filled in, the real Plaid Link window and the real Dwolla API are used instead.
+
+If `APPWRITE_BACKEND` is not set the app uses Appwrite Cloud as soon as `NEXT_APPWRITE_KEY` is
+present and falls back to the local backend otherwise.
+
+**Use Appwrite Cloud instead**
+
+Set `APPWRITE_BACKEND=cloud` in `.env.local`, then:
+
+1. Open your project in the [Appwrite console](https://cloud.appwrite.io/console) and create an API
+   key under **Overview -> Integrations -> API Keys**. Give it the scopes `databases.read`,
+   `databases.write`, `collections.read`, `collections.write`, `attributes.read` and
+   `attributes.write`.
+2. Paste the key into `.env.local` as `NEXT_APPWRITE_KEY=...` and set `NEXT_PUBLIC_APPWRITE_PROJECT`
+   to your project ID.
+3. Run:
+
+```bash
+npm run setup:appwrite
+```
+
+The script creates the database and the collections (`users`, `banks` and `transactions`), and writes
+`APPWRITE_DATABASE_ID`, `APPWRITE_USER_COLLECTION_ID`, `APPWRITE_BANK_COLLECTION_ID` and
+`APPWRITE_TRANSACTION_COLLECTION_ID` back into `.env.local`. It is safe to run it more than once,
+existing resources are reused.
+
+If a variable is still missing, the sign in / sign up page shows a **Setup required** panel listing
+exactly which variables have to be added, instead of failing with a server error.
+
+**Plaid and Dwolla credentials**
+
+`DWOLLA_KEY` and `DWOLLA_SECRET` must be set to your Dwolla API credentials before using Dwolla
+features; blank values are not valid. You can obtain these credentials by signing up on the
+[Appwrite](https://appwrite.io/?utm_source=youtube&utm_content=reactnative&ref=JSmastery),
+[Plaid](https://plaid.com/) and [Dwolla](https://www.dwolla.com/)
+
+Leave the Plaid and Dwolla variables empty to run the app without any third party account: both
+services are then emulated locally (see [local mode](#quick-start) above).
+
+If `DWOLLA_ENV` is unset or blank, the app defaults to `sandbox`. Set it to `production` when using
+Dwolla production credentials.
 
 **Running the Project**
 
@@ -156,16 +215,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 
 ```env
 #NEXT
-NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 #APPWRITE
+# `local` uses the built-in file backed database (no Appwrite account needed),
+# `cloud` uses Appwrite Cloud.
+APPWRITE_BACKEND=local
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_PROJECT=
 APPWRITE_DATABASE_ID=
 APPWRITE_USER_COLLECTION_ID=
 APPWRITE_BANK_COLLECTION_ID=
 APPWRITE_TRANSACTION_COLLECTION_ID=
-APPWRITE_SECRET=
+NEXT_APPWRITE_KEY=
 
 #PLAID
 PLAID_CLIENT_ID=

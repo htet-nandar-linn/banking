@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Select,
@@ -23,8 +23,18 @@ export const BankDropdown = ({
   const router = useRouter();
   const [selected, setSeclected] = useState(accounts[0]);
 
+  // The form is pre-filled with the first account, otherwise the transfer form
+  // cannot be submitted without touching the dropdown.
+  useEffect(() => {
+    if (!selected?.appwriteItemId) return;
+
+    setValue?.("senderBank", selected.appwriteItemId);
+  }, [selected, setValue]);
+
   const handleBankChange = (id: string) => {
     const account = accounts.find((account) => account.appwriteItemId === id)!;
+
+    if (!account) return;
 
     setSeclected(account);
     const newUrl = formUrlQuery({
@@ -41,7 +51,7 @@ export const BankDropdown = ({
 
   return (
     <Select
-      defaultValue={selected.id}
+      defaultValue={selected?.id}
       onValueChange={(value) => handleBankChange(value)}
     >
       <SelectTrigger
@@ -53,7 +63,9 @@ export const BankDropdown = ({
           height={20}
           alt="account"
         />
-        <p className="line-clamp-1 w-full text-left">{selected.name}</p>
+        <p className="line-clamp-1 w-full text-left">
+          {selected?.name ?? "No bank accounts linked yet"}
+        </p>
       </SelectTrigger>
       <SelectContent
         className={`w-full bg-white md:w-[300px] ${otherStyles}`}

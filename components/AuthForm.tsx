@@ -22,13 +22,15 @@ import CustomInput from './CustomInput';
 import { authFormSchema } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getLoggedInUser, signIn, signUp } from '@/lib/actions/user.actions';
+import { signIn, signUp } from '@/lib/actions/user.actions';
+import DemoBankLink from './DemoBankLink';
 import PlaidLink from './PlaidLink';
 
-const AuthForm = ({ type }: { type: string }) => {
+const AuthForm = ({ type, notice, plaidEnabled = true }: AuthFormProps) => {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const formSchema = authFormSchema(type);
 
@@ -36,14 +38,23 @@ const AuthForm = ({ type }: { type: string }) => {
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
       defaultValues: {
+        firstName: '',
+        lastName: '',
+        address1: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        dateOfBirth: '',
+        ssn: '',
         email: "",
-        password: ''
+        password: '',
       },
     })
    
     // 2. Define a submit handler.
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
       setIsLoading(true);
+      setErrorMessage('');
 
       try {
         // Sign up with Appwrite & create plaid token
@@ -62,21 +73,39 @@ const AuthForm = ({ type }: { type: string }) => {
             password: data.password
           }
 
-          const newUser = await signUp(userData);
+          const result = await signUp(userData);
 
-          setUser(newUser);
+          if (!result?.success) {
+            setErrorMessage(
+              result?.error ?? 'We could not create your account. Please try again.'
+            );
+            return;
+          }
+
+          setUser(result.user);
         }
 
         if(type === 'sign-in') {
-          const response = await signIn({
+          const result = await signIn({
             email: data.email,
             password: data.password,
           })
 
-          if(response) router.push('/')
+          if (!result?.success) {
+            setErrorMessage(
+              result?.error ?? 'We could not sign you in. Please try again.'
+            );
+            return;
+          }
+
+          router.push('/')
         }
       } catch (error) {
-        console.log(error);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Unable to complete your request. Please try again.'
+        );
       } finally {
         setIsLoading(false);
       }
@@ -84,6 +113,7 @@ const AuthForm = ({ type }: { type: string }) => {
 
   return (
     <section className="auth-form">
+      {notice}
       <header className='flex flex-col gap-5 md:gap-8'>
           <Link href="/" className="cursor-pointer flex items-center gap-1">
             <Image 
@@ -112,9 +142,33 @@ const AuthForm = ({ type }: { type: string }) => {
             </h1>
           </div>
       </header>
+      {errorMessage && (
+        <p role="alert" className="form-message">
+          {errorMessage}
+        </p>
+      )}
       {user ? (
         <div className="flex flex-col gap-4">
-          <PlaidLink user={user} variant="primary" />
+          {plaidEnabled ? (
+            <PlaidLink user={user} variant="primary" />
+          ) : (
+            /* Without Plaid credentials the demo bank account is linked
+               instead, so the dashboard has something to show. */
+            <DemoBankLink user={user} variant="primary" />
+          )}
+
+          {/* Linking a bank account is optional, the dashboard works without
+              it as well. */}
+          {!plaidEnabled && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="form-btn"
+              onClick={() => router.push('/')}
+            >
+              Continue without linking a bank
+            </Button>
+          )}
         </div>
       ): (
         <>
@@ -124,7 +178,7 @@ const AuthForm = ({ type }: { type: string }) => {
                 <>
                   <div className="flex gap-4">
                     <CustomInput control={form.control} name='firstName' label="First Name" placeholder='Enter your first name' />
-                    <CustomInput control={form.control} name='lastName' label="Last Name" placeholder='Enter your first name' />
+                    <CustomInput control={form.control} name='lastName' label="Last Name" placeholder='Enter your last name' />
                   </div>
                   <CustomInput control={form.control} name='address1' label="Address" placeholder='Enter your specific address' />
                   <CustomInput control={form.control} name='city' label="City" placeholder='Enter your city' />

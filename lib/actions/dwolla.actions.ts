@@ -2,8 +2,21 @@
 
 import { Client } from "dwolla-v2";
 
+import {
+  ENV_VARS,
+  getEnvironmentVariable,
+  isDwollaEmulated,
+} from "../config";
+
+/** Base url used by the emulated (local) Dwolla implementation. */
+const LOCAL_DWOLLA_BASE_URL = "https://sandbox.dwolla.com/v2";
+
+/** Generates an id that looks like a Dwolla id, for the emulated responses. */
+const createLocalId = (prefix: string) =>
+  `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+
 const getEnvironment = (): "production" | "sandbox" => {
-  const environment = process.env.DWOLLA_ENV?.trim() || "sandbox";
+  const environment = getEnvironmentVariable(ENV_VARS.dwollaEnv) || "sandbox";
 
   switch (environment) {
     case "sandbox":
@@ -18,8 +31,8 @@ const getEnvironment = (): "production" | "sandbox" => {
 };
 
 const getDwollaClient = (): Client => {
-  const key = process.env.DWOLLA_KEY?.trim();
-  const secret = process.env.DWOLLA_SECRET?.trim();
+  const key = getEnvironmentVariable(ENV_VARS.dwollaKey);
+  const secret = getEnvironmentVariable(ENV_VARS.dwollaSecret);
 
   if (!key || !secret) {
     throw new Error(
@@ -27,17 +40,38 @@ const getDwollaClient = (): Client => {
     );
   }
 
-  return new Client({
+  const client = new Client({
     environment: getEnvironment(),
     key,
     secret,
   });
+
+  // `DWOLLA_BASE_URL` is optional, it allows pointing the app at a different
+  // Dwolla host (a mock or a proxy) instead of the default sandbox/production.
+  const baseUrl = getEnvironmentVariable(ENV_VARS.dwollaBaseUrl);
+
+  if (baseUrl) {
+    const normalized = baseUrl.replace(/\/$/, "");
+    // `apiUrl` / `tokenUrl` are not part of the published typings.
+    const endpoints = client as Client & { apiUrl: string; tokenUrl: string };
+
+    endpoints.apiUrl = normalized;
+    endpoints.tokenUrl = `${normalized}/token`;
+  }
+
+  return client;
 };
 
 // Create a Dwolla Funding Source using a Plaid Processor Token
 export const createFundingSource = async (
   options: CreateFundingSourceOptions
 ) => {
+  if (isDwollaEmulated()) {
+    return `${LOCAL_DWOLLA_BASE_URL}/funding-sources/${createLocalId(
+      "demo-funding-source"
+    )}`;
+  }
+
   try {
     const dwollaClient = getDwollaClient();
     return await dwollaClient
@@ -52,6 +86,16 @@ export const createFundingSource = async (
 };
 
 export const createOnDemandAuthorization = async () => {
+  if (isDwollaEmulated()) {
+    return {
+      authorization: {
+        href: `${LOCAL_DWOLLA_BASE_URL}/on-demand-authorizations/${createLocalId(
+          "demo-authorization"
+        )}`,
+      },
+    };
+  }
+
   try {
     const dwollaClient = getDwollaClient();
     const onDemandAuthorization = await dwollaClient.post(
@@ -67,6 +111,12 @@ export const createOnDemandAuthorization = async () => {
 export const createDwollaCustomer = async (
   newCustomer: NewDwollaCustomerParams
 ) => {
+  if (isDwollaEmulated()) {
+    return `${LOCAL_DWOLLA_BASE_URL}/customers/${createLocalId(
+      "demo-customer"
+    )}`;
+  }
+
   try {
     const dwollaClient = getDwollaClient();
     return await dwollaClient
@@ -74,6 +124,7 @@ export const createDwollaCustomer = async (
       .then((res) => res.headers.get("location"));
   } catch (err) {
     console.error("Creating a Dwolla Customer Failed: ", err);
+    throw err;
   }
 };
 
@@ -82,6 +133,10 @@ export const createTransfer = async ({
   destinationFundingSourceUrl,
   amount,
 }: TransferParams) => {
+  if (isDwollaEmulated()) {
+    return `${LOCAL_DWOLLA_BASE_URL}/transfers/${createLocalId("demo-transfer")}`;
+  }
+
   try {
     const dwollaClient = getDwollaClient();
     const requestBody = {

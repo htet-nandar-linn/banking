@@ -40,6 +40,7 @@ declare type User = {
   postalCode: string;
   dateOfBirth: string;
   ssn: string;
+  bio?: string;
 };
 
 declare type NewUserParams = {
@@ -190,6 +191,9 @@ declare interface PlaidLinkProps {
 
 declare interface AuthFormProps {
   type: "sign-in" | "sign-up";
+  notice?: React.ReactNode;
+  /** False when Plaid is not configured, linking a bank account is skipped. */
+  plaidEnabled?: boolean;
 }
 
 declare interface BankDropdownProps {
@@ -222,6 +226,8 @@ declare interface RightSidebarProps {
 
 declare interface SiderbarProps {
   user: User;
+  /** False when Plaid is not configured, the demo bank account is used. */
+  plaidEnabled?: boolean;
 }
 
 declare interface RecentTransactionsProps {
@@ -315,6 +321,10 @@ declare interface createBankAccountProps {
   bankId: string;
   fundingSourceUrl: string;
   shareableId: string;
+}
+
+declare interface createDemoBankAccountProps {
+  user: User;
 }
 
 declare interface getBanksProps {

@@ -8,21 +8,24 @@ import Category from './Category'
 const RightSidebar = ({ user, transactions, banks }: RightSidebarProps) => {
   const categories: CategoryCount[] = countTransactionCategories(transactions);
 
+  const fullName = user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || 'User';
+  const firstInitial = (user?.firstName?.[0] || fullName?.[0] || user?.email?.[0] || 'U').toUpperCase();
+
   return (
     <aside className="right-sidebar">
       <section className="flex flex-col pb-8">
         <div className="profile-banner" />
         <div className="profile">
           <div className="profile-img">
-            <span className="text-5xl font-bold text-blue-500">{user.firstName[0]}</span>
+            <span className="text-5xl font-bold text-blue-500">{firstInitial}</span>
           </div>
 
           <div className="profile-details">
             <h1 className='profile-name'>
-              {user.firstName} {user.lastName}
+              {fullName}
             </h1>
             <p className="profile-email">
-              {user.email}
+              {user?.email}
             </p>
           </div>
         </div>

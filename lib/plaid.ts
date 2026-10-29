@@ -1,7 +1,24 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
+import { ENV_VARS, getEnvironmentVariable, isPlaidConfigured } from './config';
+import { createLocalPlaidClient } from './local-plaid';
+
+const getPlaidEnvironment = () => {
+  const environment = getEnvironmentVariable(ENV_VARS.plaidEnv) || 'sandbox';
+
+  switch (environment) {
+    case 'production':
+      return PlaidEnvironments.production;
+    case 'development':
+      return PlaidEnvironments.development;
+    case 'sandbox':
+    default:
+      return PlaidEnvironments.sandbox;
+  }
+};
+
 const configuration = new Configuration({
-  basePath: PlaidEnvironments.sandbox,
+  basePath: getPlaidEnvironment(),
   baseOptions: {
     headers: {
       'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
@@ -10,4 +27,6 @@ const configuration = new Configuration({
   }
 })
 
-export const plaidClient = new PlaidApi(configuration);
+export const plaidClient: PlaidApi = isPlaidConfigured()
+  ? new PlaidApi(configuration)
+  : createLocalPlaidClient();

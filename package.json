@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup:appwrite": "node scripts/setup-appwrite.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -16,8 +17,8 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
-    "@sentry/nextjs": "^7.112.2",
-    "chart.js": "^4.4.2",
+    "@sentry/nextjs": "^11.8.0",
+    "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "dwolla-v2": "^3.4.0",
@@ -25,13 +26,13 @@
     "next": "14.2.3",
     "node-appwrite": "^12.0.1",
     "plaid": "^23.0.0",
-    "query-string": "^9.0.0",
+    "query-string": "^9.5.1",
     "react": "^18",
-    "react-chartjs-2": "^5.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-countup": "^6.5.3",
     "react-dom": "^18",
     "react-hook-form": "^7.51.3",
-    "react-plaid-link": "^3.5.1",
+    "react-plaid-link": "^3.6.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.4"

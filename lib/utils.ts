@@ -76,7 +76,24 @@ export function formatAmount(amount: number): string {
   return formatter.format(amount);
 }
 
-export const parseStringify = (value: any) => JSON.parse(JSON.stringify(value));
+export const parseStringify = (value: any): any => {
+  // `JSON.parse(JSON.stringify(undefined))` throws, which used to crash the
+  // sign in flow whenever a lookup did not return a document.
+  if (value === undefined) return null;
+
+  return JSON.parse(JSON.stringify(value));
+};
+
+/** Turns anything that was thrown into a message that can be shown to a user. */
+export const getErrorMessage = (
+  error: unknown,
+  fallback = 'Something went wrong. Please try again.'
+): string => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+
+  return fallback;
+};
 
 export const removeSpecialCharacters = (value: string) => {
   return value.replace(/[^\w\s]/gi, "");

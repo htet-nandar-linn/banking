@@ -28,6 +28,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# data of the built-in local backend
+/.data/
+
 # vercel
 .vercel
 
@@ -37,3 +40,6 @@ next-env.d.ts
 
 # Sentry Config File
 .sentryclirc
+
+# Sentry Config File
+.env.sentry-build-plugin
